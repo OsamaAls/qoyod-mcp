@@ -32,7 +32,7 @@ manifest.tools = tools.map((t) => ({ name: t.name, description: t.title }));
 const next = `${JSON.stringify(manifest, null, 2)}\n`;
 
 if (process.argv.includes('--check')) {
-  if (next !== current) {
+  if (next !== current.replace(/\r\n/g, '\n')) {
     console.error('manifest.json is out of date: run "node scripts/sync-manifest.mjs".');
     process.exit(1);
   }

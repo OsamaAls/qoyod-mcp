@@ -3,11 +3,14 @@
 // - binds to 127.0.0.1 by default, with DNS-rebinding protection on loopback
 // - one MCP session per client, so the company pop-up (elicitation) works over HTTP too
 // Never expose one instance for other people's Qoyod accounts.
-import crypto from 'node:crypto';
+import crypto, { webcrypto } from 'node:crypto';
 import http from 'node:http';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { isSet } from './config.js';
+
+// Node 18 has no global Web Crypto, which the SDK's HTTP transport uses for session ids.
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
 const SESSION_IDLE_MS = 30 * 60 * 1000;

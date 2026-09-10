@@ -44,9 +44,10 @@ for (const dir of [...dirs].sort()) {
   const license = typeof pkg.license === 'string' ? pkg.license : pkg.license?.type ?? 'UNKNOWN';
   if (!ALLOWED.has(license)) problems.push(`${pkg.name}@${pkg.version}: license "${license}" is not on the allowed list`);
   const files = fs.readdirSync(abs).filter((f) => LICENSE_FILES.test(f));
-  const text = files.length ? fs.readFileSync(path.join(abs, files[0]), 'utf8').trim() : null;
+  const read = (f) => fs.readFileSync(path.join(abs, f), 'utf8').replace(/\r\n/g, '\n').trim();
+  const text = files.length ? read(files[0]) : null;
   const notice = fs.readdirSync(abs).find((f) => /^notice(\.(md|txt))?$/i.test(f));
-  entries.push({ name: pkg.name, version: pkg.version, license, text, notice: notice ? fs.readFileSync(path.join(abs, notice), 'utf8').trim() : null });
+  entries.push({ name: pkg.name, version: pkg.version, license, text, notice: notice ? read(notice) : null });
 }
 const unique = [...new Map(entries.map((e) => [`${e.name}@${e.version}`, e])).values()].sort((a, b) => a.name.localeCompare(b.name));
 
@@ -68,7 +69,7 @@ if (problems.length) {
 }
 if (process.argv.includes('--check')) {
   const existing = fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : '';
-  if (existing !== md) {
+  if (existing.replace(/\r\n/g, '\n') !== md) {
     console.error('THIRD_PARTY_NOTICES.md is out of date: run "node scripts/notices.mjs".');
     process.exit(1);
   }
