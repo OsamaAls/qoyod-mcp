@@ -46,10 +46,6 @@
       "description": "Read: connection status"
     },
     {
-      "name": "qoyod_settings",
-      "description": "Settings: main company"
-    },
-    {
       "name": "qoyod_read_accounts",
       "description": "Read: Chart of accounts"
     },
@@ -240,6 +236,10 @@
     {
       "name": "qoyod_delete_request",
       "description": "Delete: raw API request (DELETE)"
+    },
+    {
+      "name": "qoyod_settings",
+      "description": "Settings: main company"
     }
   ],
   "tools_generated": false,

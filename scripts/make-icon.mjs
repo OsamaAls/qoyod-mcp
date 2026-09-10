@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Draws the extension icon (icon.png, 256x256): a ledger page with a check mark. Original artwork, no Qoyod branding.
+// Draws the extension icon (icon.png, 512x512): a ledger page with a check mark. Original artwork, no Qoyod branding.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,23 +35,25 @@ function shade(x, y) {
   return color;
 }
 
-const rgba = Buffer.alloc(SIZE * SIZE * 4);
-for (let py = 0; py < SIZE; py++) {
-  for (let px = 0; px < SIZE; px++) {
+const OUT = 512; // rendered size; the shapes above use a 256-unit design grid
+const K = SIZE / OUT;
+const rgba = Buffer.alloc(OUT * OUT * 4);
+for (let py = 0; py < OUT; py++) {
+  for (let px = 0; px < OUT; px++) {
     let r = 0;
     let g = 0;
     let b = 0;
     let a = 0;
     for (let sy = 0; sy < SS; sy++) {
       for (let sx = 0; sx < SS; sx++) {
-        const [cr, cg, cb, ca] = shade(px + (sx + 0.5) / SS, py + (sy + 0.5) / SS);
+        const [cr, cg, cb, ca] = shade((px + (sx + 0.5) / SS) * K, (py + (sy + 0.5) / SS) * K);
         r += cr * ca;
         g += cg * ca;
         b += cb * ca;
         a += ca;
       }
     }
-    const i = (py * SIZE + px) * 4;
+    const i = (py * OUT + px) * 4;
     rgba[i] = a ? Math.round(r / a) : 0;
     rgba[i + 1] = a ? Math.round(g / a) : 0;
     rgba[i + 2] = a ? Math.round(b / a) : 0;
@@ -78,14 +80,14 @@ const chunk = (type, data) => {
   return Buffer.concat([len, td, crc]);
 };
 const ihdr = Buffer.alloc(13);
-ihdr.writeUInt32BE(SIZE, 0);
-ihdr.writeUInt32BE(SIZE, 4);
+ihdr.writeUInt32BE(OUT, 0);
+ihdr.writeUInt32BE(OUT, 4);
 ihdr[8] = 8;
 ihdr[9] = 6;
-const raw = Buffer.alloc(SIZE * (SIZE * 4 + 1));
-for (let y = 0; y < SIZE; y++) {
-  raw[y * (SIZE * 4 + 1)] = 0;
-  rgba.copy(raw, y * (SIZE * 4 + 1) + 1, y * SIZE * 4, (y + 1) * SIZE * 4);
+const raw = Buffer.alloc(OUT * (OUT * 4 + 1));
+for (let y = 0; y < OUT; y++) {
+  raw[y * (OUT * 4 + 1)] = 0;
+  rgba.copy(raw, y * (OUT * 4 + 1) + 1, y * OUT * 4, (y + 1) * OUT * 4);
 }
 const png = Buffer.concat([
   Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),

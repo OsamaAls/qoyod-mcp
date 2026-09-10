@@ -758,7 +758,7 @@ export function registerTools(server, baseCtx) {
     },
     (args, extra) => handleStatus(ctx, args ?? {}, extra),
   );
-  reg(
+  const registerSettings = () => reg(
     'qoyod_settings',
     {
       title: 'Settings: main company',
@@ -775,7 +775,10 @@ export function registerTools(server, baseCtx) {
     },
     (args) => handleSettings(ctx, args ?? {}),
   );
-  if (ctx.setup) return names;
+  if (ctx.setup) {
+    registerSettings();
+    return names;
+  }
 
   const sw = ctx.switches;
   const active = RESOURCES.filter((r) => sw.toolsets.has(r.toolset));
@@ -865,6 +868,7 @@ export function registerTools(server, baseCtx) {
       (args, extra) => handleRequest(ctx, 'delete', args, extra),
     );
   }
+  registerSettings(); // last, so the read / write / delete groups stay together in tool lists
   return names;
 }
 
