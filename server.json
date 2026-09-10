@@ -1,0 +1,49 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.OsamaAls/qoyod-mcp",
+  "title": "Qoyod (unofficial)",
+  "description": "Unofficial Qoyod accounting API server: separate read, write and delete tools, several companies.",
+  "repository": {
+    "url": "https://github.com/OsamaAls/qoyod-mcp",
+    "source": "github"
+  },
+  "version": "2.0.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "qoyod-mcp",
+      "version": "2.0.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "QOYOD_API_KEY_1",
+          "description": "Qoyod API key of company 1 (Qoyod: Settings > General Settings > API key)",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "QOYOD_COMPANY_1_NAME",
+          "description": "Name of company 1, as you will say it to the assistant",
+          "isRequired": false,
+          "format": "string"
+        },
+        {
+          "name": "QOYOD_API_KEY_2",
+          "description": "Qoyod API key of company 2 (optional)",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "QOYOD_COMPANY_2_NAME",
+          "description": "Name of company 2 (optional)",
+          "isRequired": false,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}

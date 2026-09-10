@@ -1,26 +1,59 @@
 {
   "name": "qoyod-mcp",
-  "version": "1.0.0",
-  "description": "MCP server exposing the Qoyod accounting API (all 19 resource types) to Claude",
+  "version": "2.0.0",
+  "mcpName": "io.github.OsamaAls/qoyod-mcp",
+  "description": "Unofficial MCP server for the Qoyod accounting API: separate read, write and delete tools, multi-company, works with any MCP client",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "qoyod",
+    "accounting",
+    "saudi-arabia",
+    "zatca",
+    "erp",
+    "قيود"
+  ],
+  "license": "MIT",
+  "author": "OsamaAls",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OsamaAls/qoyod-mcp.git"
+  },
+  "homepage": "https://github.com/OsamaAls/qoyod-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/OsamaAls/qoyod-mcp/issues"
+  },
   "type": "module",
-  "main": "dist/qoyod-mcp.cjs",
   "bin": {
     "qoyod-mcp": "dist/qoyod-mcp.cjs"
   },
-  "scripts": {
-    "start": "node src/index.js",
-    "build": "esbuild src/index.js --bundle --platform=node --target=node18 --format=cjs --outfile=dist/qoyod-mcp.cjs",
-    "test": "node test/smoke.test.js",
-    "test:write": "node test/smoke.test.js --write"
+  "files": [
+    "dist/qoyod-mcp.cjs",
+    "README.md",
+    "CAPABILITIES-AR.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "engines": {
+    "node": ">=18"
   },
-  "license": "MIT",
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
-    "zod": "^4.5.4"
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node src/index.js",
+    "test": "node scripts/test.mjs",
+    "test:multi": "node test/multicompany.test.js",
+    "test:live": "node test/smoke.test.js",
+    "test:write": "node test/smoke.test.js --write",
+    "release": "node scripts/build.mjs && node scripts/release.mjs",
+    "prepublishOnly": "node scripts/build.mjs && node scripts/test.mjs"
   },
   "devDependencies": {
+    "@anthropic-ai/mcpb": "^2.1.2",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "esbuild": "^0.28.2",
-    "@anthropic-ai/mcpb": "latest"
+    "zod": "^4.5.4"
   },
   "allowScripts": {
     "esbuild@0.28.2": true

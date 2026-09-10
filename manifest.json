@@ -1,85 +1,338 @@
 {
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/mcpb/main/schemas/mcpb-manifest-v0.2.schema.json",
   "manifest_version": "0.2",
   "name": "qoyod-mcp",
-  "display_name": "Qoyod Accounting",
-  "version": "1.1.0",
-  "description": "Connect Claude to your Qoyod accounting company/companies - all 19 API resource types (accounts, products, inventories, customers, vendors, invoices, bills, payments, receipts, journal entries, ...).",
-  "long_description": "Gives Claude 19 tools that wrap the Qoyod API v2.0 (https://apidoc.qoyod.com/): Accounts, Products, Inventories (+ stock adjustments/transfers), Product Categories, Product Units, Vendors, Purchase Orders, Bills, Bill Payments, Simple Bills, Simple Bill Payments, Debit Notes, Customers, Quotes, Invoices (+ PDF), Invoice Payments, Credit Notes, Receipts and Journal Entries. Each tool supports list / get / create and, where Qoyod allows it, update / delete / allocate. Supports two companies (each Qoyod company has its own API key): every tool takes a `company` parameter. Keys are stored by Claude Desktop and sent only to api.qoyod.com.",
+  "display_name": "Qoyod (unofficial)",
+  "version": "2.0.0",
+  "description": "Unofficial connector for the Qoyod accounting API, with read, write and delete tools in separate groups and support for several companies.",
+  "long_description": "Connects your AI assistant to your own Qoyod accounting companies through the Qoyod API v2.0, using your own API keys. Tools come in three groups that you can allow or block separately: qoyod_read_* (read-only), qoyod_write_* (create, update, allocate) and qoyod_delete_*. With several companies, reads use your main company or ask you, and changes tell you the company before anything is sent. Your keys stay on this computer and are sent only to api.qoyod.com. Unofficial: not affiliated with, endorsed by or sponsored by Qoyod.",
   "author": {
-    "name": "OsamaAls"
+    "name": "OsamaAls",
+    "url": "https://github.com/OsamaAls"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OsamaAls/qoyod-mcp.git"
+  },
+  "homepage": "https://github.com/OsamaAls/qoyod-mcp",
+  "documentation": "https://github.com/OsamaAls/qoyod-mcp#readme",
+  "support": "https://github.com/OsamaAls/qoyod-mcp/issues",
+  "icon": "icon.png",
   "server": {
     "type": "node",
     "entry_point": "dist/qoyod-mcp.cjs",
     "mcp_config": {
       "command": "node",
-      "args": ["${__dirname}/dist/qoyod-mcp.cjs"],
+      "args": [
+        "${__dirname}/dist/qoyod-mcp.cjs"
+      ],
       "env": {
+        "QOYOD_ENV_FILE": "none",
         "QOYOD_COMPANY_1_NAME": "${user_config.company_1_name}",
         "QOYOD_API_KEY_1": "${user_config.api_key_1}",
         "QOYOD_COMPANY_2_NAME": "${user_config.company_2_name}",
-        "QOYOD_API_KEY_2": "${user_config.api_key_2}"
+        "QOYOD_API_KEY_2": "${user_config.api_key_2}",
+        "QOYOD_COMPANY_3_NAME": "${user_config.company_3_name}",
+        "QOYOD_API_KEY_3": "${user_config.api_key_3}",
+        "QOYOD_ALLOW_WRITES": "${user_config.allow_writes}",
+        "QOYOD_ALLOW_DELETES": "${user_config.allow_deletes}",
+        "QOYOD_BLOCK_SALES_WRITES": "${user_config.block_sales_changes}"
       }
     }
   },
   "tools": [
-    { "name": "qoyod_accounts", "description": "Chart of accounts: list, get, create" },
-    { "name": "qoyod_products", "description": "Products & services: list, get, create, update" },
-    { "name": "qoyod_inventories", "description": "Warehouses, stock adjustments and transfers" },
-    { "name": "qoyod_product_categories", "description": "Product categories: list, get, create, update" },
-    { "name": "qoyod_product_units", "description": "Units of measure: list, get, create" },
-    { "name": "qoyod_vendors", "description": "Vendors/suppliers: list, get, create, update" },
-    { "name": "qoyod_purchase_orders", "description": "Purchase orders: list, get, create" },
-    { "name": "qoyod_bills", "description": "Vendor bills: list, get, create, delete, allocate" },
-    { "name": "qoyod_bill_payments", "description": "Bill payments: list, get, create" },
-    { "name": "qoyod_simple_bills", "description": "Expense (simple) bills: list, get, create, update, delete, allocate" },
-    { "name": "qoyod_simple_bill_payments", "description": "Simple bill payments: list, get, create" },
-    { "name": "qoyod_debit_notes", "description": "Debit notes (purchase returns): list, get, create, delete" },
-    { "name": "qoyod_customers", "description": "Customers: list, get, create, update" },
-    { "name": "qoyod_quotes", "description": "Quotes/estimates: list, get, create" },
-    { "name": "qoyod_invoices", "description": "Sales invoices: list, get, create, delete, allocate, pdf" },
-    { "name": "qoyod_invoice_payments", "description": "Invoice payments: list, get, create" },
-    { "name": "qoyod_credit_notes", "description": "Credit notes (sales returns): list, get, create, delete" },
-    { "name": "qoyod_receipts", "description": "Receipts / payment vouchers: list, get, create, delete, allocate" },
-    { "name": "qoyod_journal_entries", "description": "Manual journal entries: list, get, create" }
+    {
+      "name": "qoyod_read_status",
+      "description": "Read: connection status"
+    },
+    {
+      "name": "qoyod_settings",
+      "description": "Settings: main company"
+    },
+    {
+      "name": "qoyod_read_accounts",
+      "description": "Read: Chart of accounts"
+    },
+    {
+      "name": "qoyod_read_products",
+      "description": "Read: Products & services"
+    },
+    {
+      "name": "qoyod_read_inventories",
+      "description": "Read: Warehouses & stock movements"
+    },
+    {
+      "name": "qoyod_read_product_categories",
+      "description": "Read: Product categories"
+    },
+    {
+      "name": "qoyod_read_product_units",
+      "description": "Read: Units of measure"
+    },
+    {
+      "name": "qoyod_read_taxes",
+      "description": "Read: Taxes"
+    },
+    {
+      "name": "qoyod_read_vendors",
+      "description": "Read: Vendors (suppliers)"
+    },
+    {
+      "name": "qoyod_read_purchase_orders",
+      "description": "Read: Purchase orders"
+    },
+    {
+      "name": "qoyod_read_bills",
+      "description": "Read: Bills (purchase invoices)"
+    },
+    {
+      "name": "qoyod_read_bill_payments",
+      "description": "Read: Bill payments"
+    },
+    {
+      "name": "qoyod_read_simple_bills",
+      "description": "Read: Simple bills (expense bills)"
+    },
+    {
+      "name": "qoyod_read_simple_bill_payments",
+      "description": "Read: Simple bill payments"
+    },
+    {
+      "name": "qoyod_read_debit_notes",
+      "description": "Read: Debit notes (purchase returns)"
+    },
+    {
+      "name": "qoyod_read_customers",
+      "description": "Read: Customers"
+    },
+    {
+      "name": "qoyod_read_quotes",
+      "description": "Read: Quotes"
+    },
+    {
+      "name": "qoyod_read_invoices",
+      "description": "Read: Sales invoices"
+    },
+    {
+      "name": "qoyod_read_invoice_payments",
+      "description": "Read: Invoice payments"
+    },
+    {
+      "name": "qoyod_read_credit_notes",
+      "description": "Read: Credit notes (sales returns)"
+    },
+    {
+      "name": "qoyod_read_receipts",
+      "description": "Read: Receipts & payment vouchers"
+    },
+    {
+      "name": "qoyod_read_journal_entries",
+      "description": "Read: Journal entries"
+    },
+    {
+      "name": "qoyod_read_request",
+      "description": "Read: raw API request (GET)"
+    },
+    {
+      "name": "qoyod_write_accounts",
+      "description": "Write: Chart of accounts"
+    },
+    {
+      "name": "qoyod_write_products",
+      "description": "Write: Products & services"
+    },
+    {
+      "name": "qoyod_write_inventories",
+      "description": "Write: Warehouses & stock movements"
+    },
+    {
+      "name": "qoyod_write_product_categories",
+      "description": "Write: Product categories"
+    },
+    {
+      "name": "qoyod_write_product_units",
+      "description": "Write: Units of measure"
+    },
+    {
+      "name": "qoyod_write_vendors",
+      "description": "Write: Vendors (suppliers)"
+    },
+    {
+      "name": "qoyod_write_purchase_orders",
+      "description": "Write: Purchase orders"
+    },
+    {
+      "name": "qoyod_write_bills",
+      "description": "Write: Bills (purchase invoices)"
+    },
+    {
+      "name": "qoyod_write_bill_payments",
+      "description": "Write: Bill payments"
+    },
+    {
+      "name": "qoyod_write_simple_bills",
+      "description": "Write: Simple bills (expense bills)"
+    },
+    {
+      "name": "qoyod_write_simple_bill_payments",
+      "description": "Write: Simple bill payments"
+    },
+    {
+      "name": "qoyod_write_debit_notes",
+      "description": "Write: Debit notes (purchase returns)"
+    },
+    {
+      "name": "qoyod_write_customers",
+      "description": "Write: Customers"
+    },
+    {
+      "name": "qoyod_write_quotes",
+      "description": "Write: Quotes"
+    },
+    {
+      "name": "qoyod_write_invoices",
+      "description": "Write: Sales invoices"
+    },
+    {
+      "name": "qoyod_write_invoice_payments",
+      "description": "Write: Invoice payments"
+    },
+    {
+      "name": "qoyod_write_credit_notes",
+      "description": "Write: Credit notes (sales returns)"
+    },
+    {
+      "name": "qoyod_write_receipts",
+      "description": "Write: Receipts & payment vouchers"
+    },
+    {
+      "name": "qoyod_write_journal_entries",
+      "description": "Write: Journal entries"
+    },
+    {
+      "name": "qoyod_write_request",
+      "description": "Write: raw API request (POST/PUT/PATCH)"
+    },
+    {
+      "name": "qoyod_delete_bills",
+      "description": "Delete: Bills (purchase invoices)"
+    },
+    {
+      "name": "qoyod_delete_simple_bills",
+      "description": "Delete: Simple bills (expense bills)"
+    },
+    {
+      "name": "qoyod_delete_debit_notes",
+      "description": "Delete: Debit notes (purchase returns)"
+    },
+    {
+      "name": "qoyod_delete_invoices",
+      "description": "Delete: Sales invoices"
+    },
+    {
+      "name": "qoyod_delete_credit_notes",
+      "description": "Delete: Credit notes (sales returns)"
+    },
+    {
+      "name": "qoyod_delete_receipts",
+      "description": "Delete: Receipts & payment vouchers"
+    },
+    {
+      "name": "qoyod_delete_request",
+      "description": "Delete: raw API request (DELETE)"
+    }
   ],
   "tools_generated": false,
-  "keywords": ["qoyod", "accounting", "invoices", "saudi", "vat", "erp"],
+  "keywords": [
+    "qoyod",
+    "accounting",
+    "invoices",
+    "saudi-arabia",
+    "vat",
+    "zatca",
+    "erp"
+  ],
   "license": "MIT",
+  "privacy_policies": [
+    "https://github.com/OsamaAls/qoyod-mcp/blob/main/SECURITY.md#privacy",
+    "https://www.qoyod.com/en/privacy-policy/"
+  ],
   "compatibility": {
     "claude_desktop": ">=0.10.0",
-    "platforms": ["win32", "darwin"],
-    "runtimes": { "node": ">=18.0.0" }
+    "platforms": [
+      "win32",
+      "darwin",
+      "linux"
+    ],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
   },
   "user_config": {
     "company_1_name": {
       "type": "string",
       "title": "Company 1 - name",
-      "description": "How you will refer to this company when talking to Claude (e.g. My Company).",
-      "default": "Company 1",
-      "required": true
+      "description": "The company's name as you will say it to the assistant.",
+      "required": false,
+      "default": ""
     },
     "api_key_1": {
       "type": "string",
       "title": "Company 1 - Qoyod API key",
-      "description": "In Qoyod, with this company selected: Settings > General Settings > API key (click Save after generating).",
+      "description": "In Qoyod, with this company open: Settings > General Settings > API key, then Save.",
       "sensitive": true,
       "required": true
     },
     "company_2_name": {
       "type": "string",
       "title": "Company 2 - name (optional)",
-      "description": "Leave as is if you only have one company.",
-      "default": "Company 2",
-      "required": false
+      "description": "Leave empty if you have one company.",
+      "required": false,
+      "default": ""
     },
     "api_key_2": {
       "type": "string",
       "title": "Company 2 - Qoyod API key (optional)",
-      "description": "Switch to the second company in Qoyod, then Settings > General Settings > API key > Save. Leave empty if you only have one company.",
+      "description": "Switch to the second company in Qoyod first: each company has its own key.",
       "sensitive": true,
       "required": false,
       "default": ""
+    },
+    "company_3_name": {
+      "type": "string",
+      "title": "Company 3 - name (optional)",
+      "description": "Leave empty if you have fewer than three companies.",
+      "required": false,
+      "default": ""
+    },
+    "api_key_3": {
+      "type": "string",
+      "title": "Company 3 - Qoyod API key (optional)",
+      "description": "Each company has its own key.",
+      "sensitive": true,
+      "required": false,
+      "default": ""
+    },
+    "allow_writes": {
+      "type": "boolean",
+      "title": "Allow write tools (create, update, allocate)",
+      "description": "Turn off to remove every qoyod_write_* tool.",
+      "required": false,
+      "default": true
+    },
+    "allow_deletes": {
+      "type": "boolean",
+      "title": "Allow delete tools",
+      "description": "Turn off to remove every qoyod_delete_* tool.",
+      "required": false,
+      "default": true
+    },
+    "block_sales_changes": {
+      "type": "boolean",
+      "title": "Block changes to sales records",
+      "description": "Removes the write and delete tools for customers, quotes, invoices, invoice payments, credit notes and receipts (these feed ZATCA e-invoicing).",
+      "required": false,
+      "default": false
     }
   }
 }
