@@ -1,0 +1,28 @@
+{
+  "name": "qoyod-mcp",
+  "version": "1.0.0",
+  "description": "MCP server exposing the Qoyod accounting API (all 19 resource types) to Claude",
+  "type": "module",
+  "main": "dist/qoyod-mcp.cjs",
+  "bin": {
+    "qoyod-mcp": "dist/qoyod-mcp.cjs"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "build": "esbuild src/index.js --bundle --platform=node --target=node18 --format=cjs --outfile=dist/qoyod-mcp.cjs",
+    "test": "node test/smoke.test.js",
+    "test:write": "node test/smoke.test.js --write"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "@anthropic-ai/mcpb": "latest"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "manifest_version": "0.2",
+  "name": "qoyod-mcp",
+  "display_name": "Qoyod Accounting",
+  "version": "1.1.0",
+  "description": "Connect Claude to your Qoyod accounting company/companies - all 19 API resource types (accounts, products, inventories, customers, vendors, invoices, bills, payments, receipts, journal entries, ...).",
+  "long_description": "Gives Claude 19 tools that wrap the Qoyod API v2.0 (https://apidoc.qoyod.com/): Accounts, Products, Inventories (+ stock adjustments/transfers), Product Categories, Product Units, Vendors, Purchase Orders, Bills, Bill Payments, Simple Bills, Simple Bill Payments, Debit Notes, Customers, Quotes, Invoices (+ PDF), Invoice Payments, Credit Notes, Receipts and Journal Entries. Each tool supports list / get / create and, where Qoyod allows it, update / delete / allocate. Supports two companies (each Qoyod company has its own API key): every tool takes a `company` parameter. Keys are stored by Claude Desktop and sent only to api.qoyod.com.",
+  "author": {
+    "name": "OsamaAls"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "dist/qoyod-mcp.cjs",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/qoyod-mcp.cjs"],
+      "env": {
+        "QOYOD_COMPANY_1_NAME": "${user_config.company_1_name}",
+        "QOYOD_API_KEY_1": "${user_config.api_key_1}",
+        "QOYOD_COMPANY_2_NAME": "${user_config.company_2_name}",
+        "QOYOD_API_KEY_2": "${user_config.api_key_2}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "qoyod_accounts", "description": "Chart of accounts: list, get, create" },
+    { "name": "qoyod_products", "description": "Products & services: list, get, create, update" },
+    { "name": "qoyod_inventories", "description": "Warehouses, stock adjustments and transfers" },
+    { "name": "qoyod_product_categories", "description": "Product categories: list, get, create, update" },
+    { "name": "qoyod_product_units", "description": "Units of measure: list, get, create" },
+    { "name": "qoyod_vendors", "description": "Vendors/suppliers: list, get, create, update" },
+    { "name": "qoyod_purchase_orders", "description": "Purchase orders: list, get, create" },
+    { "name": "qoyod_bills", "description": "Vendor bills: list, get, create, delete, allocate" },
+    { "name": "qoyod_bill_payments", "description": "Bill payments: list, get, create" },
+    { "name": "qoyod_simple_bills", "description": "Expense (simple) bills: list, get, create, update, delete, allocate" },
+    { "name": "qoyod_simple_bill_payments", "description": "Simple bill payments: list, get, create" },
+    { "name": "qoyod_debit_notes", "description": "Debit notes (purchase returns): list, get, create, delete" },
+    { "name": "qoyod_customers", "description": "Customers: list, get, create, update" },
+    { "name": "qoyod_quotes", "description": "Quotes/estimates: list, get, create" },
+    { "name": "qoyod_invoices", "description": "Sales invoices: list, get, create, delete, allocate, pdf" },
+    { "name": "qoyod_invoice_payments", "description": "Invoice payments: list, get, create" },
+    { "name": "qoyod_credit_notes", "description": "Credit notes (sales returns): list, get, create, delete" },
+    { "name": "qoyod_receipts", "description": "Receipts / payment vouchers: list, get, create, delete, allocate" },
+    { "name": "qoyod_journal_entries", "description": "Manual journal entries: list, get, create" }
+  ],
+  "tools_generated": false,
+  "keywords": ["qoyod", "accounting", "invoices", "saudi", "vat", "erp"],
+  "license": "MIT",
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["win32", "darwin"],
+    "runtimes": { "node": ">=18.0.0" }
+  },
+  "user_config": {
+    "company_1_name": {
+      "type": "string",
+      "title": "Company 1 - name",
+      "description": "How you will refer to this company when talking to Claude (e.g. My Company).",
+      "default": "Company 1",
+      "required": true
+    },
+    "api_key_1": {
+      "type": "string",
+      "title": "Company 1 - Qoyod API key",
+      "description": "In Qoyod, with this company selected: Settings > General Settings > API key (click Save after generating).",
+      "sensitive": true,
+      "required": true
+    },
+    "company_2_name": {
+      "type": "string",
+      "title": "Company 2 - name (optional)",
+      "description": "Leave as is if you only have one company.",
+      "default": "Company 2",
+      "required": false
+    },
+    "api_key_2": {
+      "type": "string",
+      "title": "Company 2 - Qoyod API key (optional)",
+      "description": "Switch to the second company in Qoyod, then Settings > General Settings > API key > Save. Leave empty if you only have one company.",
+      "sensitive": true,
+      "required": false,
+      "default": ""
+    }
+  }
+}
