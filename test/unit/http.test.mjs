@@ -46,7 +46,7 @@ test('HTTP transport: 401 without the token, full MCP session with it', async ()
     const transport = new StreamableHTTPClientTransport(new URL(`${base}/mcp`), { requestInit: { headers: { Authorization: `Bearer ${TOKEN}` } } });
     await client.connect(transport);
     const { tools } = await client.listTools();
-    assert.equal(tools.length, 50);
+    assert.equal(tools.length, 48);
     await client.close();
   } finally {
     await h.close();

@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { Settings } from '../../src/settings.js';
-import { connect, ok, ONE, tmpDir, TWO } from './helpers.mjs';
+import { createContext } from '../../src/server.js';
+import { connect, fakeQoyod, ok, ONE, tmpDir, TWO } from './helpers.mjs';
 
 const bigRows = (n, size) => Array.from({ length: n }, (_, i) => ({ id: i + 1, blob: 'a"b\\c'.repeat(size) }));
 
@@ -119,4 +120,28 @@ test('a stale settings lock does not block saving', () => {
   s.update({ default_read_company: 'Alpha Co' });
   assert.equal(s.read().default_read_company, 'Alpha Co');
   assert.equal(fs.existsSync(`${file}.lock`), false);
+});
+
+test('a pop-up accepted after the app gave up on the call sends nothing', async () => {
+  const s = await connect({
+    routes: { 'POST bills': () => ({ status: 201, body: { bill: { id: 1 } } }) },
+    elicit: () => new Promise((resolve) => setTimeout(() => resolve({ action: 'accept', content: { company: 'Beta Co' } }), 300)),
+  });
+  await assert.rejects(
+    s.client.callTool({ name: 'qoyod_write_bills', arguments: { action: 'create', data: { contact_id: 1 } } }, undefined, { timeout: 100 }),
+    /timed out/,
+  );
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  assert.equal(s.calls.length, 0, 'the write was not sent after the late accept');
+  await s.close();
+});
+
+test('a large QOYOD_TIMEOUT_MS never pushes a call past 50 seconds', () => {
+  const ctx = createContext({
+    processEnv: { ...ONE, QOYOD_TIMEOUT_MS: '90000', QOYOD_SETTINGS_FILE: path.join(tmpDir(), 's.json') },
+    files: [],
+    fetchImpl: fakeQoyod().fetchImpl,
+  });
+  assert.equal(ctx.companies[0].client.timeoutMs, 50_000);
+  assert.equal(ctx.companies[0].client.totalTimeoutMs, 50_000);
 });

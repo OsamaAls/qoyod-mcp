@@ -35,6 +35,10 @@ const pkg = JSON.parse(fs.readFileSync(rel('package.json'), 'utf8'));
 const manifest = JSON.parse(fs.readFileSync(rel('manifest.json'), 'utf8'));
 const version = pkg.version;
 if (manifest.version !== version) fail(`manifest.json version ${manifest.version} != package.json ${version}`);
+const registry = JSON.parse(fs.readFileSync(rel('server.json'), 'utf8'));
+for (const [where, v] of [['server.json', registry.version], ...(registry.packages ?? []).map((p, i) => [`server.json packages[${i}]`, p.version])]) {
+  if (v !== version) fail(`${where} version ${v} != package.json ${version}`);
+}
 run([rel('scripts', 'sync-manifest.mjs'), '--check'], 'manifest check');
 run([rel('scripts', 'notices.mjs'), '--check'], 'notices check');
 const bundle = argValue('--bundle') ?? rel('dist', 'qoyod-mcp.cjs');

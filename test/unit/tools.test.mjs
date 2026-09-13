@@ -16,10 +16,11 @@ test('tools come in read / write / delete groups with matching annotations', asy
   const { tools } = await s.client.listTools();
   const names = tools.map((t) => t.name);
   assert.equal(names.filter((n) => n.startsWith('qoyod_read_')).length, 22);
-  assert.equal(names.filter((n) => n.startsWith('qoyod_write_')).length, 20);
-  assert.equal(names.filter((n) => n.startsWith('qoyod_delete_')).length, 7);
+  assert.equal(names.filter((n) => n.startsWith('qoyod_write_')).length, 19);
+  assert.equal(names.filter((n) => n.startsWith('qoyod_delete_')).length, 6);
   assert.ok(names.includes('qoyod_settings'));
-  assert.equal(tools.length, 50);
+  assert.equal(tools.length, 48);
+  assert.ok(names.includes('qoyod_read_request') && !names.includes('qoyod_write_request') && !names.includes('qoyod_delete_request'), 'raw changes are opt-in');
   for (const t of tools) {
     const props = Object.keys(t.inputSchema.properties ?? {});
     if (t.name.startsWith('qoyod_read_')) {
@@ -46,11 +47,15 @@ test('switches remove whole groups before the client ever sees them', async () =
   assert.ok(ro.every((n) => !n.startsWith('qoyod_write_') && !n.startsWith('qoyod_delete_')));
   assert.equal(ro.length, 23);
 
-  const noDeletes = await toolNames({ ...TWO, QOYOD_ALLOW_DELETES: 'false' });
+  const raw = await toolNames({ ...TWO, QOYOD_RAW_TOOLS: '1' });
+  assert.equal(raw.length, 50);
+  assert.ok(raw.includes('qoyod_write_request') && raw.includes('qoyod_delete_request'));
+
+  const noDeletes = await toolNames({ ...TWO, QOYOD_RAW_TOOLS: '1', QOYOD_ALLOW_DELETES: 'false' });
   assert.equal(noDeletes.filter((n) => n.startsWith('qoyod_delete_')).length, 0);
   assert.equal(noDeletes.filter((n) => n.startsWith('qoyod_write_')).length, 20);
 
-  const noSales = await toolNames({ ...TWO, QOYOD_BLOCK_SALES_WRITES: 'true' });
+  const noSales = await toolNames({ ...TWO, QOYOD_RAW_TOOLS: '1', QOYOD_BLOCK_SALES_WRITES: 'true' });
   assert.ok(noSales.includes('qoyod_read_invoices') && noSales.includes('qoyod_write_bills'));
   assert.ok(!noSales.includes('qoyod_write_invoices') && !noSales.includes('qoyod_delete_invoices'));
   assert.ok(!noSales.includes('qoyod_write_request') && !noSales.includes('qoyod_delete_request'));

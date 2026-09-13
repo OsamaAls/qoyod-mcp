@@ -83,6 +83,8 @@ test('companies: numbering, default names and clear problems', () => {
 test('base URL: only Qoyod over https unless explicitly allowed for local testing', () => {
   assert.equal(resolveBaseUrl({}).baseUrl, 'https://api.qoyod.com/2.0');
   assert.match(resolveBaseUrl({ QOYOD_BASE_URL: 'https://evil.example/2.0' }).error, /Refusing/);
+  assert.match(resolveBaseUrl({ QOYOD_BASE_URL: 'https://other.qoyod.com/2.0' }).error, /Refusing/, 'only api.qoyod.com, not other subdomains');
+  assert.equal(resolveBaseUrl({ QOYOD_BASE_URL: 'https://api.qoyod.com/2.0/' }).baseUrl, 'https://api.qoyod.com/2.0');
   assert.match(resolveBaseUrl({ QOYOD_BASE_URL: 'http://127.0.0.1:9/2.0' }).error, /Refusing/);
   assert.equal(resolveBaseUrl({ QOYOD_BASE_URL: 'http://127.0.0.1:9/2.0', QOYOD_ALLOW_CUSTOM_BASE_URL: '1' }).baseUrl, 'http://127.0.0.1:9/2.0');
   assert.match(resolveBaseUrl({ QOYOD_BASE_URL: 'http://evil.example/2.0', QOYOD_ALLOW_CUSTOM_BASE_URL: '1' }).error, /plain http/);

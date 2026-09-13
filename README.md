@@ -15,8 +15,8 @@ Connect an AI assistant to your own [Qoyod](https://www.qoyod.com) accounting bo
 | Group | Tools | What they do |
 |---|---|---|
 | Read | `qoyod_read_*` (22) | List, get, PDF links, connection status, raw GET. Marked read-only. |
-| Write | `qoyod_write_*` (20) | Create, update, allocate, stock adjustments and transfers, raw POST/PUT/PATCH. These change your live books. |
-| Delete | `qoyod_delete_*` (7) | Delete bills, simple bills, debit notes, invoices, credit notes, receipts, raw DELETE. |
+| Write | `qoyod_write_*` (19) | Create, update, allocate, stock adjustments and transfers. These change your live books. |
+| Delete | `qoyod_delete_*` (6) | Delete bills, simple bills, debit notes, invoices, credit notes, receipts. |
 | Settings | `qoyod_settings` | The main company, stored on your computer. |
 
 ## Safety by design
@@ -44,7 +44,7 @@ Use only one install method per computer.
 3. Enter each company's name and API key. You can also turn off write or delete tools, or block changes to sales records.
 4. Start a new chat and ask: *"Check my Qoyod connection."*
 
-If the downloaded file ends in `.zip` (some email and chat apps rename it), rename it back to `.mcpb`. Turn on "File name extensions" in File Explorer to see the real ending. Each release lists a SHA-256 checksum for every file.
+If the file does not appear in the **Install Extension…** dialog, update Claude Desktop first: older versions only accept the previous `.dxt` format. If the downloaded file ends in `.zip` (some email and chat apps rename it), rename it back to `.mcpb`. Turn on "File name extensions" in File Explorer to see the real ending. Each release lists a SHA-256 checksum for every file.
 
 ### Claude Code
 
@@ -172,10 +172,11 @@ The main companies live in a small settings file that holds company names only, 
 | `QOYOD_ALLOW_DELETES` | `all` | Delete tools: `all`, `none`, or a list of toolsets. |
 | `QOYOD_BLOCK_SALES_WRITES` | `false` | Removes the write and delete tools for sales records. |
 | `QOYOD_READ_ONLY` | `false` | Removes every write and delete tool. |
+| `QOYOD_RAW_TOOLS` | `false` | Adds `qoyod_write_request` (raw POST/PUT/PATCH) and `qoyod_delete_request` (raw DELETE) for requests the other tools do not cover. They skip the per-tool guidance, so they are off by default. |
 | `QOYOD_CONFIRM_WRITES` | `when_missing` | `always` = pop-up for every change. |
 | `QOYOD_DEFAULT_COMPANY` | — | Preset main company for reads. A saved choice wins. |
 | `QOYOD_DEFAULT_WRITE_COMPANY` | — | Preset main company for changes. A saved choice wins. |
-| `QOYOD_TIMEOUT_MS` | `45000` | Per-request timeout. A whole call stays under about 50 seconds. |
+| `QOYOD_TIMEOUT_MS` | `45000` | Per-request timeout, at most 50000. A whole call always stays under 50 seconds, so desktop apps with a 60-second tool limit still get the answer. |
 | `QOYOD_DEBUG` | `false` | Log each request (company, method, path, status, time) to stderr. |
 | `QOYOD_LOG_FILE` | — | Also append log lines to this file. |
 | `QOYOD_ENV_FILE` | — | A `.env` file to read. `none` = read no `.env` file. |
@@ -188,7 +189,7 @@ The main companies live in a small settings file that holds company names only, 
   - `purchases`: vendors, purchase orders, bills, bill payments, simple bills, simple bill payments and debit notes.
   - `inventory`: products, categories, units and warehouses.
   - `accounting`: accounts, journal entries and taxes.
-- **Raw request tools** exist only while every toolset and the matching group are fully enabled.
+- **Raw request tools:** `qoyod_read_request` exists while every toolset is enabled; the raw write and delete tools also need `QOYOD_RAW_TOOLS=true` and every write or delete group enabled.
 - **`.env` files** are read from the folder of `qoyod-mcp.cjs` and the folder above it. Real environment variables win.
 - **Security:** the API address and the HTTP settings are never taken from a `.env` file.
 
@@ -236,10 +237,10 @@ Limits of the Qoyod API itself:
 ## Troubleshooting
 
 - **Start here:** ask *"Check my Qoyod connection."* The status tool shows whether each key is accepted and which warehouses it sees.
-- **"Server disconnected" or "Couldn't start" messages.** Version 2 keeps running when a key is missing and explains the setup instead. If the messages continue, look at the app's MCP logs (`mcp.log` and `mcp-server-*.log`):
+- **"Server disconnected" or "Couldn't start" messages.** Version 2 keeps running when a key is missing and explains the setup instead. After installing, ask *"Check my Qoyod connection"* in each kind of session your app offers (for example a normal chat and a Cowork or Code session in Claude Desktop): a session that answers "not set up" did not receive your keys. If the messages continue, look at the app's MCP logs (`mcp.log` and `mcp-server-*.log`):
   - Claude Desktop on Windows: `%APPDATA%\Claude\logs` (classic installer) or `%LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\Claude\logs` (Microsoft Store).
   - Claude Desktop on macOS: `~/Library/Logs/Claude`.
-- **The `.mcpb` file does not show in "Install Extension…".** The file was probably renamed to `.zip` or `.mcpb.zip` on the way. Rename it to `.mcpb`.
+- **The `.mcpb` file does not show in "Install Extension…".** Either Claude Desktop is out of date (older versions only list the previous `.dxt` format: update it), or the file was renamed to `.zip` or `.mcpb.zip` on the way (rename it to `.mcpb`).
 - **401 from Qoyod.** The key is wrong, was not saved in Qoyod, or belongs to another company.
 - **`may_already_be_saved`.** Check in Qoyod whether the record exists before asking again.
 - **Slow or cut-off lists.** Narrow them with a date range in `q`, or use `fields`.
@@ -295,7 +296,7 @@ Details are in [SECURITY.md](SECURITY.md).
 2. انقر عليه مرتين، أو افتح الإعدادات ← الإضافات ← الإعدادات المتقدمة ← تثبيت إضافة.
 3. أدخل اسم كل شركة ومفتاحها.
 
-إذا تحوّل اسم الملف إلى `.zip` فأعد تسميته إلى `.mcpb`.
+إذا لم يظهر الملف في نافذة التثبيت فحدّث Claude Desktop أولاً (الإصدارات القديمة تقبل صيغة `.dxt` فقط). وإذا تحوّل اسم الملف إلى `.zip` فأعد تسميته إلى `.mcpb`.
 
 **تنبيه:** هذا مشروع غير رسمي وغير تابع لقيود. أنت مسؤول عن أي تعديل على دفاترك، فراجع المسودات قبل اعتمادها. لا يُعد هذا استشارة ضريبية أو محاسبية.
 

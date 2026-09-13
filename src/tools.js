@@ -2,8 +2,8 @@
 //   qoyod_read_<resource>    list / get / pdf              readOnlyHint: true
 //   qoyod_write_<resource>   create / update / allocate ... changes the live books
 //   qoyod_delete_<resource>  delete by id                   destructiveHint: true
-// plus qoyod_read_status, qoyod_read_request / qoyod_write_request / qoyod_delete_request (raw API access)
-// and qoyod_settings (the saved main company for reads).
+// plus qoyod_read_status, qoyod_read_request (raw GET), qoyod_write_request / qoyod_delete_request (raw changes,
+// only with QOYOD_RAW_TOOLS=1) and qoyod_settings (the saved main companies).
 import { z } from 'zod';
 import { ElicitResultSchema } from '@modelcontextprotocol/sdk/types.js';
 import { TOOLSETS } from './config.js';
@@ -237,12 +237,15 @@ async function elicitCompany(ctx, group, extra, preselect, actionText) {
     result = await extra.sendRequest(
       { method: 'elicitation/create', params: { message, requestedSchema: { type: 'object', properties, required: ['company'] } } },
       ElicitResultSchema,
-      { timeout: ELICIT_TIMEOUT_MS },
+      { timeout: ELICIT_TIMEOUT_MS, signal: extra.signal },
     );
   } catch (err) {
+    if (extra.signal?.aborted) return { cancelled: 'the request was cancelled while the pop-up was open' };
     ctx.log?.(`company pop-up failed (${err?.message ?? err}); asking through the assistant instead`);
     return null;
   }
+  // The app may have given up on the call (timeout or Stop) while the pop-up was open: send nothing then.
+  if (extra.signal?.aborted) return { cancelled: 'the request was cancelled while the pop-up was open' };
   if (result.action !== 'accept') return { cancelled: result.action };
   const company = findCompany(ctx.companies, result.content?.company);
   if (!company) return { cancelled: 'no-company' };
@@ -726,6 +729,7 @@ function handleSettings(ctx, args) {
       toolsets: [...sw.toolsets],
       writes_allowed_for: [...sw.writes],
       deletes_allowed_for: [...sw.deletes],
+      raw_write_and_delete_tools: sw.rawTools,
       settings_file: ctx.settings.file,
       ...(ctx.problems.length ? { config_problems: ctx.problems } : {}),
       ...(ctx.setup ? { setup_problems: ctx.setup } : {}),
@@ -866,7 +870,7 @@ export function registerTools(server, baseCtx) {
       (args, extra) => handleWrite(ctx, res, args, extra),
     );
   }
-  if (allToolsets && TOOLSETS.every((t) => sw.writes.has(t))) {
+  if (sw.rawTools && allToolsets && TOOLSETS.every((t) => sw.writes.has(t))) {
     reg(
       'qoyod_write_request',
       {
@@ -899,7 +903,7 @@ export function registerTools(server, baseCtx) {
       (args, extra) => handleDelete(ctx, res, args, extra),
     );
   }
-  if (allToolsets && TOOLSETS.every((t) => sw.deletes.has(t))) {
+  if (sw.rawTools && allToolsets && TOOLSETS.every((t) => sw.deletes.has(t))) {
     reg(
       'qoyod_delete_request',
       {

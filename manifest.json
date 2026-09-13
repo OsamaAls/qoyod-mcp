@@ -1,6 +1,6 @@
 {
-  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/mcpb/main/schemas/mcpb-manifest-v0.2.schema.json",
-  "manifest_version": "0.2",
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/mcpb/main/schemas/mcpb-manifest-v0.3.schema.json",
+  "manifest_version": "0.3",
   "name": "qoyod-mcp",
   "display_name": "Qoyod (unofficial)",
   "version": "2.0.0",
@@ -206,10 +206,6 @@
       "description": "Write: Journal entries"
     },
     {
-      "name": "qoyod_write_request",
-      "description": "Write: raw API request (POST/PUT/PATCH)"
-    },
-    {
       "name": "qoyod_delete_bills",
       "description": "Delete: Bills (purchase invoices)"
     },
@@ -232,10 +228,6 @@
     {
       "name": "qoyod_delete_receipts",
       "description": "Delete: Receipts & payment vouchers"
-    },
-    {
-      "name": "qoyod_delete_request",
-      "description": "Delete: raw API request (DELETE)"
     },
     {
       "name": "qoyod_settings",

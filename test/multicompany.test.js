@@ -26,6 +26,7 @@ Object.assign(env, {
   QOYOD_ENV_FILE: 'none',
   QOYOD_BASE_URL: mock.base,
   QOYOD_ALLOW_CUSTOM_BASE_URL: '1',
+  QOYOD_RAW_TOOLS: '1', // so the raw change tools are covered by the "never sent without a company" checks
   QOYOD_SETTINGS_FILE: path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'qoyod-multi-')), 'settings.json'),
   QOYOD_API_KEY_1: 'fake-key-one-111',
   QOYOD_COMPANY_1_NAME: 'Alpha Co',
@@ -59,7 +60,7 @@ console.log(`\n== ${SERVER} (offline, fake Qoyod at ${mock.base}) ==`);
 try {
   await client.connect(transport);
   const { tools } = await client.listTools();
-  check('50 tools with two companies', tools.length === 50, String(tools.length));
+  check('50 tools with two companies and raw tools on', tools.length === 50, String(tools.length));
   const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   check('server version matches package.json', client.getServerVersion()?.version === pkg.version, client.getServerVersion()?.version);
 

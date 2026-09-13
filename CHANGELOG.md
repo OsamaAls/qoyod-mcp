@@ -25,6 +25,9 @@
 - **Empty results are only real empties.** Only Qoyod's "found nothing" 404 becomes an empty list, and an empty filter no longer returns every record.
 - **Arrays only where Qoyod supports them.** Array data is accepted only where Qoyod documents bulk create.
 - **No crash on missing keys.** Without keys, the server stays connected in setup mode instead of exiting. Exiting caused repeated "Server disconnected" messages in desktop apps.
+- **Raw changes are opt-in.** `qoyod_write_request` and `qoyod_delete_request` exist only with `QOYOD_RAW_TOOLS=true`; the raw GET tool stays on.
+- **Every call ends within 50 seconds**, whatever `QOYOD_TIMEOUT_MS` says, so desktop apps with a 60-second limit always receive the answer, including "may already be saved".
+- **A choice pop-up that is answered after the app gave up on the call sends nothing.**
 - **The installer is safer.** It now:
   - works in Windows PowerShell 5.1;
   - writes UTF-8 without a BOM;
@@ -48,7 +51,7 @@
   - `qoyod_read_status` checks each key and shows the warehouses it opens.
   - `qoyod_read_taxes` lists taxes.
   - PDF links for bills and credit notes.
-  - Raw request tools per group.
+  - Raw request tools per group (raw GET always; raw changes with `QOYOD_RAW_TOOLS`).
   - `qoyod_settings` for the main companies.
 - **Group switches:** `QOYOD_TOOLSETS`, `QOYOD_ALLOW_WRITES`, `QOYOD_ALLOW_DELETES`, `QOYOD_BLOCK_SALES_WRITES` and `QOYOD_READ_ONLY`, mirrored in the desktop extension settings.
 - **Better lists:**

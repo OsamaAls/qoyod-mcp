@@ -10,6 +10,9 @@ export const SETUP_HELP =
   'Then put the key in this server\'s settings: in a desktop extension, open the extension\'s settings; in a JSON or TOML client config or a .env file, ' +
   'set QOYOD_API_KEY_1 and QOYOD_COMPANY_1_NAME (QOYOD_API_KEY_2 and QOYOD_COMPANY_2_NAME for a second company). Then restart the app.';
 
+// Desktop apps stop listening after 60 s: every call, including a "may already be saved" answer, ends within this.
+const TOTAL_TIMEOUT_MS = 50_000;
+
 function positiveInt(v, fallback) {
   const n = Number(v);
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
@@ -30,14 +33,14 @@ export function createContext({ processEnv = process.env, bundleDir, files, fetc
 
   if (!setup.length) {
     const debug = isTrue(env.QOYOD_DEBUG);
-    const timeoutMs = positiveInt(env.QOYOD_TIMEOUT_MS, 45_000);
+    const timeoutMs = Math.min(positiveInt(env.QOYOD_TIMEOUT_MS, 45_000), TOTAL_TIMEOUT_MS);
     for (const c of companies) {
       c.client = new QoyodClient({
         apiKey: c.apiKey,
         baseUrl: base.baseUrl,
         fetchImpl,
         timeoutMs,
-        totalTimeoutMs: Math.max(timeoutMs, 50_000),
+        totalTimeoutMs: TOTAL_TIMEOUT_MS,
         userAgent: `qoyod-mcp/${version}`,
         label: c.name,
         log,

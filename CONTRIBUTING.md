@@ -32,3 +32,12 @@ node test/multicompany.test.js
 
 - Keep each pull request focused, and describe what changed and how you tested it.
 - CI runs the build, the unit tests, the offline process test, the manifest and notices checks, and a secret scan on Linux and Windows.
+
+## Release checklist (maintainers)
+
+1. Bump the version in `package.json`, `manifest.json` and `server.json`; run `node scripts/sync-manifest.mjs` and `node scripts/notices.mjs`.
+2. `npm test`, `npm run build`, `node test/multicompany.test.js`, then the live read-only smoke test.
+3. `npm run release`, and check that `SHA256SUMS.txt` matches the files you upload.
+4. Tag `vX.Y.Z` and create the GitHub Release with the `.mcpb`, the manual zip and `SHA256SUMS.txt`.
+5. `npm publish` **before** announcing: the README's `npx -y qoyod-mcp` lines only work once the package exists.
+6. On the first public release: enable **Private vulnerability reporting** (Settings → Security), because SECURITY.md sends reporters there; add repository topics.

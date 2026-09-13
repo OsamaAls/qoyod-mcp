@@ -185,7 +185,7 @@ export function resolveBaseUrl(env) {
   } catch {
     return { error: 'QOYOD_BASE_URL is not a valid URL.' };
   }
-  const official = u.protocol === 'https:' && (u.hostname === 'api.qoyod.com' || u.hostname.endsWith('.qoyod.com'));
+  const official = u.protocol === 'https:' && u.hostname === 'api.qoyod.com';
   if (official) return { baseUrl: raw, warning: custom && raw !== DEFAULT_BASE_URL ? `Using Qoyod base URL ${u.origin}${u.pathname}.` : undefined };
   const local = ['127.0.0.1', 'localhost', '[::1]'].includes(u.hostname);
   if (!isTrue(env.QOYOD_ALLOW_CUSTOM_BASE_URL)) {
@@ -226,5 +226,7 @@ export function parseSwitches(env, warnings = []) {
   const mode = (env.QOYOD_CONFIRM_WRITES || '').trim().toLowerCase();
   // Default: a pop-up only when a change names no company. "always" = pop-up for every change (strict mode).
   if (mode && !['always', 'when_missing'].includes(mode)) warnings.push(`QOYOD_CONFIRM_WRITES: unknown value "${mode}", using "when_missing".`);
-  return { readOnly, toolsets, writes, deletes, confirmWrites: mode === 'always' ? 'always' : 'when_missing' };
+  // The raw POST/PUT/PATCH and DELETE tools skip the per-resource guidance and reach undocumented endpoints: opt-in only.
+  const rawTools = isTrue(env.QOYOD_RAW_TOOLS);
+  return { readOnly, toolsets, writes, deletes, rawTools, confirmWrites: mode === 'always' ? 'always' : 'when_missing' };
 }
