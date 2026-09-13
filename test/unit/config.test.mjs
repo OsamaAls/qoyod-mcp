@@ -44,6 +44,14 @@ test('a key variable present but empty in the environment (desktop extension) st
   assert.equal(env.QOYOD_COMPANY_2_NAME, undefined);
 });
 
+test('a company never takes its name from the environment and its key from a file', () => {
+  const f = envFile('QOYOD_API_KEY_2=file-key-2222\n');
+  const { env } = loadEnv({ processEnv: { QOYOD_API_KEY_1: 'env-key-1111', QOYOD_COMPANY_2_NAME: 'Beta' }, files: [f] });
+  assert.equal(env.QOYOD_API_KEY_2, 'file-key-2222');
+  assert.equal(env.QOYOD_COMPANY_2_NAME, undefined, 'the environment name for a file-owned slot is dropped');
+  assert.equal(loadCompanies(env).companies[1].name, 'Company 2');
+});
+
 test('.env candidates: bundle folder and its parent, never the working directory; QOYOD_ENV_FILE=none disables', () => {
   const list = envFileCandidates({ processEnv: {}, bundleDir: path.join('x', 'dist') });
   assert.deepEqual(list, [path.join('x', 'dist', '.env'), path.join('x', 'dist', '..', '.env')]);

@@ -49,11 +49,33 @@ export class Settings {
     }
   }
 
+  // Read-modify-write under a short lock file, so two server instances saving at once do not lose a change.
   update(patch) {
-    const next = { ...this.read(), ...patch };
-    for (const [k, v] of Object.entries(patch)) if (v === undefined) delete next[k];
-    this.write(next);
-    return next;
+    fs.mkdirSync(path.dirname(this.file), { recursive: true });
+    const lock = `${this.file}.lock`;
+    let fd = null;
+    for (let attempt = 0; attempt < 100 && fd === null; attempt++) {
+      try {
+        fd = fs.openSync(lock, 'wx');
+      } catch (err) {
+        if (err.code !== 'EEXIST') throw err;
+        try {
+          if (Date.now() - fs.statSync(lock).mtimeMs > 5000) fs.unlinkSync(lock); // stale lock
+        } catch { /* already gone */ }
+        sleepSync(20);
+      }
+    }
+    try {
+      const next = { ...this.read(), ...patch };
+      for (const [k, v] of Object.entries(patch)) if (v === undefined) delete next[k];
+      this.write(next);
+      return next;
+    } finally {
+      if (fd !== null) {
+        fs.closeSync(fd);
+        try { fs.unlinkSync(lock); } catch { /* ignore */ }
+      }
+    }
   }
 }
 

@@ -25,7 +25,15 @@ function userError(message) {
   return Object.assign(new Error(message), { user: true });
 }
 
-const enc = (id) => encodeURIComponent(String(id));
+// Ids go into the URL path, so only plain tokens are allowed ("." or ".." would change which endpoint is called).
+const enc = (id) => {
+  const s = String(id);
+  if (!/^[A-Za-z0-9_-]+$/.test(s)) throw userError(`"id" must be a plain record id (letters, digits, "-" or "_"), not "${s}".`);
+  return encodeURIComponent(s);
+};
+
+const TYPE_FILTERS = new Set(['type_eq', 'type_not_eq', 'type_in', 'type_not_in', 'type_cont', 'type_start']);
+const META_KEYS = ['company', 'config_problems', '_company_note', '_settings', '_note', '_page', '_fetch_all', '_created'];
 
 // Models sometimes send objects as JSON strings; accept them without changing the advertised schema.
 const jsonish = (v) => {
@@ -110,36 +118,53 @@ function createdSummary(data, res) {
 
 // ---- output ------------------------------------------------------------------
 
-function truncateToFit(payload, max) {
-  const key = rowsKey(payload);
-  if (key) {
-    const { [key]: rows, ...rest } = payload;
-    const build = (k) =>
-      JSON.stringify({
-        ...rest,
-        _truncated: {
-          rows_shown: k,
-          rows_received: rows.length,
-          hint: 'Output limit reached: use page/per_page, fields, or q filters (for example a date range) to see the rest.',
-        },
+function largestFitting(limit, build, max) {
+  let lo = 0;
+  let hi = limit;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (build(mid).length <= max) lo = mid;
+    else hi = mid - 1;
+  }
+  return build(lo);
+}
+
+// `key` is the key of the data rows (never a note such as config_problems or _created).
+function truncateToFit(payload, max, key) {
+  if (key && Array.isArray(payload[key])) {
+    const rows = payload[key];
+    const { [key]: _rows, ...rest } = payload;
+    const build = (k) => {
+      const head = { ...rest };
+      // A cut result is never the whole answer, whatever the paging said.
+      if (head._fetch_all) head._fetch_all = { ...head._fetch_all, complete: false, note: 'The output was cut, so these rows are not the whole answer.' };
+      if (head._page) {
+        head._page = {
+          ...head._page,
+          more: true,
+          next: `The output was cut: call again with the same page and a smaller per_page (try ${Math.max(1, Math.floor(k / 2))}), or use fields to keep fewer fields per row.`,
+        };
+      }
+      return JSON.stringify({
+        ...head,
+        _truncated: { rows_shown: k, rows_received: rows.length, hint: 'Output limit reached: use per_page, fields, or q filters (for example a date range) to see the rest.' },
         [key]: rows.slice(0, k),
       });
-    let lo = 0;
-    let hi = rows.length;
-    while (lo < hi) {
-      const mid = Math.ceil((lo + hi) / 2);
-      if (build(mid).length <= max) lo = mid;
-      else hi = mid - 1;
-    }
-    const text = build(lo);
+    };
+    const text = largestFitting(rows.length, build, max);
     if (text.length <= max) return text;
   }
+  // A single record too large to show: keep the notes and shrink the preview until the whole result fits.
+  const meta = {};
+  for (const k of META_KEYS) if (k in payload) meta[k] = payload[k];
   const full = JSON.stringify(payload);
-  return JSON.stringify({
-    company: payload.company,
-    _truncated: { chars_shown: max - 1000, chars_total: full.length, hint: 'The record is too large to show in full: use fields to pick the parts you need.' },
-    preview: full.slice(0, max - 1000),
-  });
+  const build = (n) =>
+    JSON.stringify({
+      ...meta,
+      _truncated: { chars_shown: n, chars_total: full.length, hint: 'The record is too large to show in full: use fields to pick the parts you need.' },
+      preview: full.slice(0, n),
+    });
+  return largestFitting(full.length, build, max);
 }
 
 export function formatResult({ company, data, meta = {}, problems = [], maxChars = MAX_OUTPUT_CHARS }) {
@@ -153,9 +178,10 @@ export function formatResult({ company, data, meta = {}, problems = [], maxChars
   if (meta.fetchAll) payload._fetch_all = meta.fetchAll;
   if (meta.created !== undefined) payload._created = meta.created;
   const body = data && typeof data === 'object' && !Array.isArray(data) ? data : { result: data };
+  const dataRowsKey = rowsKey(body);
   for (const [k, v] of Object.entries(body)) if (!(k in payload)) payload[k] = v;
   let text = JSON.stringify(payload);
-  if (text.length > maxChars) text = truncateToFit(payload, maxChars);
+  if (text.length > maxChars) text = truncateToFit(payload, maxChars, dataRowsKey);
   return { content: [{ type: 'text', text }] };
 }
 
@@ -294,6 +320,11 @@ export async function resolveCompany(ctx, group, args, extra, actionText) {
     const r = await elicitCompany(ctx, group, extra, preselect, actionText);
     if (r?.cancelled) return { cancelled: r.cancelled };
     if (r) return r;
+    // The pop-up failed. In strict mode nothing may be sent without it.
+    if (strict) return { cancelled: 'the confirmation pop-up could not be shown' };
+  } else if (strict && explicit) {
+    // The app cannot show pop-ups, so its own approval prompt is the confirmation for a named company.
+    return { company: explicit };
   }
   // No pop-up available. A change that already names its company goes ahead: the client's own approval
   // prompt (keep write/delete tools on "ask") is the confirmation in that case.
@@ -367,6 +398,9 @@ async function listRecords(res, client, args, signal) {
   if (res.localTypeFilter && q) {
     for (const k of Object.keys(q)) {
       if (k.startsWith('type_')) {
+        if (!TYPE_FILTERS.has(k)) {
+          throw userError(`Filter "${k}" is not supported here: use ${[...TYPE_FILTERS].join(', ')} (Qoyod returns nothing for type filters, so this tool applies them itself).`);
+        }
         typeFilters = { ...typeFilters, [k]: q[k] };
         delete q[k];
       }
@@ -672,7 +706,16 @@ function handleSettings(ctx, args) {
     }
     if (args.action === 'clear_main_company') {
       ctx.settings.update(Object.fromEntries(keys.map((k) => [k, undefined])));
-      return textResult({ ok: true, cleared: scope, note: 'Calls without a company will ask the user again.' });
+      const presets = [];
+      if (keys.includes('default_read_company') && findCompany(ctx.companies, ctx.env.QOYOD_DEFAULT_COMPANY)) presets.push('QOYOD_DEFAULT_COMPANY still sets the main company for reads');
+      if (keys.includes('default_write_company') && findCompany(ctx.companies, ctx.env.QOYOD_DEFAULT_WRITE_COMPANY)) presets.push('QOYOD_DEFAULT_WRITE_COMPANY still sets the main company for changes');
+      return textResult({
+        ok: true,
+        cleared: scope,
+        note: presets.length
+          ? `${presets.join('; ')}: remove it from this server's settings to be asked again.`
+          : 'Calls without a company will ask the user again.',
+      });
     }
     const sw = ctx.switches;
     return textResult({

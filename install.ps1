@@ -66,11 +66,53 @@ function Get-ClaudeConfigPath {
   $classic = Join-Path $env:APPDATA 'Claude\claude_desktop_config.json'
   $packages = Join-Path $env:LOCALAPPDATA 'Packages'
   $store = Get-ChildItem $packages -Directory -Filter 'Claude_*' -ErrorAction SilentlyContinue | Select-Object -First 1
-  if ($store) {
-    # Microsoft Store (MSIX) build of Claude Desktop keeps its settings inside its package folder.
-    return (Join-Path $store.FullName 'LocalCache\Roaming\Claude\claude_desktop_config.json')
-  }
+  # The Microsoft Store (MSIX) build of Claude Desktop keeps its settings inside its package folder.
+  $storeCfg = if ($store) { Join-Path $store.FullName 'LocalCache\Roaming\Claude\claude_desktop_config.json' } else { $null }
+  if ($storeCfg -and (Test-Path $storeCfg)) { return $storeCfg }
+  if (Test-Path $classic) { return $classic }
+  if ($storeCfg) { return $storeCfg }
   return $classic
+}
+
+# ConvertFrom-Json silently keeps only one of two duplicate keys, which would drop settings when we rewrite the file.
+function Test-DuplicateJsonKeys([string]$Path) {
+  $js = @'
+const s = require('fs').readFileSync(process.argv[2], 'utf8').replace(/^﻿/, '');
+const stack = [];
+const dups = [];
+let i = 0;
+while (i < s.length) {
+  const c = s[i];
+  if (c === '"') {
+    let j = i + 1;
+    while (j < s.length && s[j] !== '"') j += s[j] === '\\' ? 2 : 1;
+    const str = s.slice(i, j + 1);
+    i = j + 1;
+    const top = stack[stack.length - 1];
+    if (top && top.keys && top.expectKey) {
+      if (top.keys.has(str)) dups.push(str);
+      top.keys.add(str);
+      top.expectKey = false;
+    }
+    continue;
+  }
+  if (c === '{') stack.push({ keys: new Set(), expectKey: true });
+  else if (c === '[') stack.push({});
+  else if (c === '}' || c === ']') stack.pop();
+  else if (c === ',' && stack.length && stack[stack.length - 1].keys) stack[stack.length - 1].expectKey = true;
+  i++;
+}
+if (dups.length) { console.log(dups.join(', ')); process.exit(3); }
+'@
+  $tmp = Join-Path ([IO.Path]::GetTempPath()) "qoyod-mcp-dupcheck-$PID.js"
+  [IO.File]::WriteAllText($tmp, $js, (New-Object System.Text.UTF8Encoding($false)))
+  try {
+    $out = & $node $tmp $Path 2>&1 | Out-String
+    if ($LASTEXITCODE -eq 3) { return $out.Trim() }
+    return $null
+  } finally {
+    Remove-Item $tmp -ErrorAction SilentlyContinue
+  }
 }
 
 # ---- collect companies ---------------------------------------------------------------
@@ -127,6 +169,8 @@ if (Test-Path $cfgPath) {
   Write-Host "Backup of the existing config: $backup"
   $raw = [IO.File]::ReadAllText($cfgPath)
   if ($raw.Trim()) {
+    $dups = Test-DuplicateJsonKeys $cfgPath
+    if ($dups) { throw "$cfgPath contains duplicate keys ($dups), so nothing was changed. Merge them by hand, then run this script again." }
     $convertArgs = @{}
     if ((Get-Command ConvertFrom-Json).Parameters.ContainsKey('DateKind')) { $convertArgs.DateKind = 'String' }
     try { $cfg = $raw | ConvertFrom-Json @convertArgs }

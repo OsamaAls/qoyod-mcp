@@ -89,6 +89,12 @@ export function loadEnv({ processEnv = process.env, bundleDir, files } = {}) {
       const s = slotOf(k);
       if (s && !owner[s] && keyVarsOf(s).includes(k) && isSet(v)) owner[s] = file;
     }
+    // A slot owned by this file takes its name from this file only, never from the real environment.
+    for (const s of Object.keys(owner)) {
+      if (owner[s] !== file) continue;
+      const nameVars = s === '1' ? ['QOYOD_COMPANY_NAME', 'QOYOD_COMPANY_1_NAME'] : [`QOYOD_COMPANY_${s}_NAME`];
+      for (const n of nameVars) if (!isSet(parsed[n])) delete env[n];
+    }
     let took = false;
     for (const [k, v] of Object.entries(parsed)) {
       if (!k.startsWith('QOYOD_') || ENV_ONLY.has(k) || !isSet(v)) continue;

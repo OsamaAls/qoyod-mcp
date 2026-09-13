@@ -153,7 +153,7 @@ Give each company a key and a name: `QOYOD_API_KEY_1` with `QOYOD_COMPANY_1_NAME
   - **Changes** use your *main company for changes*. The assistant tells you the company name before anything is sent.
   - **Without a main company,** you pick the company from a list. Apps that support MCP elicitation (for example Claude Code) show a pop-up that can also save the choice as your main company. Other apps ask you in the chat.
 - **Change the main company** at any time by asking, for example *"make My Company my main company for reads"*.
-- **Strict mode:** set `QOYOD_CONFIRM_WRITES=always` to get the pop-up for every change, even when you named the company.
+- **Strict mode:** set `QOYOD_CONFIRM_WRITES=always` to get the pop-up for every change, even when you named the company. This needs an app that supports pop-ups; in other apps the named company is used and that app's own approval prompt is the check.
 - **Record ids** belong to one company. The assistant is told never to reuse an id from another company.
 
 The main companies live in a small settings file that holds company names only, never keys:

@@ -179,8 +179,8 @@ function keyValues() {
   const add = (name, v) => {
     if (typeof v === 'string' && v.trim().length >= 8 && !/^\$\{/.test(v.trim())) values.set(v.trim(), name);
   };
-  const files = [rel('.env'), rel('..', '.env'), process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'qoyod-mcp', '.env')].filter(Boolean);
-  for (const f of files) {
+  const envFiles = [rel('.env'), rel('..', '.env'), process.env.QOYOD_ENV_FILE, process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'qoyod-mcp', '.env')];
+  for (const f of envFiles.filter(Boolean)) {
     if (!fs.existsSync(f)) continue;
     for (const line of fs.readFileSync(f, 'utf8').split(/\r?\n/)) {
       const m = /^\s*(?:export\s+)?(QOYOD_[A-Z0-9_]*(?:KEY|TOKEN)[A-Z0-9_]*)\s*=\s*["']?([^"'#\s]+)/.exec(line);
@@ -188,6 +188,22 @@ function keyValues() {
     }
   }
   for (const [k, v] of Object.entries(process.env)) if (/^QOYOD_.*(KEY|TOKEN)/.test(k)) add(k, v);
+  // Keys that install.ps1 or a desktop client stored in a Claude Desktop config on this computer.
+  const configs = [process.env.APPDATA && path.join(process.env.APPDATA, 'Claude', 'claude_desktop_config.json')];
+  const packages = process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'Packages');
+  if (packages && fs.existsSync(packages)) {
+    for (const d of fs.readdirSync(packages).filter((n) => n.startsWith('Claude_'))) {
+      configs.push(path.join(packages, d, 'LocalCache', 'Roaming', 'Claude', 'claude_desktop_config.json'));
+    }
+  }
+  for (const f of configs.filter(Boolean)) {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(f, 'utf8'));
+      for (const server of Object.values(cfg.mcpServers ?? {})) {
+        for (const [k, v] of Object.entries(server?.env ?? {})) if (/^QOYOD_.*(KEY|TOKEN)/.test(k)) add(k, v);
+      }
+    } catch { /* missing or unreadable */ }
+  }
   return values;
 }
 const secrets = keyValues();

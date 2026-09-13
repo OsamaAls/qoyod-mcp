@@ -204,8 +204,8 @@ export class QoyodClient {
 
       if (res.status >= 300 && res.status < 400) {
         throw new QoyodApiError(
-          `Qoyod answered ${res.status} (redirect) on ${method} ${shortPath}; the redirect was not followed. Check the base URL.`,
-          { status: res.status, method, url, path: shortPath },
+          `Qoyod answered ${res.status} (redirect) on ${method} ${shortPath}; the redirect was not followed. Check the base URL.${isWrite ? ` ${MAYBE_SAVED}` : ''}`,
+          { status: res.status, method, url, path: shortPath, maybeSaved: isWrite },
         );
       }
       const data = parseBody(text);
