@@ -1,0 +1,18 @@
+# The release script packs an explicit allowlist from a staging folder; this file is a safety net
+# for anyone running "mcpb pack" in the project root.
+.env
+.env.*
+node_modules/
+src/
+test/
+scripts/
+release/
+.github/
+*.zip
+*.mcpb
+*.bak
+*.log
+install.ps1
+claude_desktop_config.example.json
+package.json
+package-lock.json

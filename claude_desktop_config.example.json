@@ -4,10 +4,10 @@
       "command": "node",
       "args": ["C:\\qoyod-mcp\\qoyod-mcp.cjs"],
       "env": {
-        "QOYOD_COMPANY_1_NAME": "Company 1",
-        "QOYOD_API_KEY_1": "PASTE-COMPANY-1-API-KEY-HERE",
-        "QOYOD_COMPANY_2_NAME": "Company 2",
-        "QOYOD_API_KEY_2": "PASTE-COMPANY-2-API-KEY-HERE-OR-LEAVE-EMPTY"
+        "QOYOD_COMPANY_1_NAME": "My Company",
+        "QOYOD_API_KEY_1": "",
+        "QOYOD_COMPANY_2_NAME": "",
+        "QOYOD_API_KEY_2": ""
       }
     }
   }

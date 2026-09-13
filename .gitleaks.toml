@@ -1,0 +1,15 @@
+# Secret scanning for this repository: the default gitleaks rules, plus an allowlist for the obviously fake keys
+# used by the offline tests and scripts (e.g. "fake-key-one-111", "same-key-12345"). A real Qoyod key committed
+# anywhere, including in tests, is still reported.
+title = "qoyod-mcp gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake keys and tokens used by offline tests and scripts"
+regexTarget = "secret"
+regexes = [
+  '''^(fake|same|test)-[a-z0-9-]+$''',
+  '''^k[0-9]*-[a-z0-9]+$''',
+]
